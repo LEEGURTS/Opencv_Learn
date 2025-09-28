@@ -1,14 +1,23 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 
+interface Pyodide {
+  loadPackage: (packages: string | string[]) => Promise<void>;
+  runPython: (code: string) => any;
+  registerJsModule: (name: string, module: any) => void;
+  FS: any;
+  pyimport: (name: string) => any;
+}
+
 interface PythonState {
-  pyodide: any;
+  pyodide: Pyodide | null;
   isLoaded: boolean;
   error: string | null;
   reinitialize: () => void;
 }
 
 export const usePython = (): PythonState => {
-  const [pyodide, setPyodide] = useState<any>(null);
+  const [pyodide, setPyodide] = useState<Pyodide | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,7 +32,7 @@ export const usePython = (): PythonState => {
         script.onload = async () => {
           try {
             // Pyodide 초기화
-            const pyodideInstance = await (window as any).loadPyodide({
+            const pyodideInstance: Pyodide = await (window as any).loadPyodide({
               indexURL: "https://cdn.jsdelivr.net/pyodide/v0.24.1/full/",
             });
 
@@ -34,7 +43,7 @@ export const usePython = (): PythonState => {
 
             // 이미지 출력을 위한 JavaScript 함수 등록
             pyodideInstance.registerJsModule("image_utils", {
-              showImage: (imageDataUrl: string, canvasId: string) => {
+              showImage: (imageDataUrl: string, canvasId: string): void => {
                 const canvas = document.getElementById(
                   canvasId
                 ) as HTMLCanvasElement;

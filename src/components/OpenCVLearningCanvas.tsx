@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback } from "react";
+import Image from "next/image";
 import { usePythonWorker } from "@/hooks/usePythonWorker";
 import { PYTHON_TEMPLATES } from "@/constants/pythonTemplates";
 import { DEFAULT_PYTHON_CODE } from "@/constants/defaultCode";
@@ -20,38 +21,17 @@ export const OpenCVLearningCanvas: React.FC<OpenCVLearningCanvasProps> = ({
   const [webcamStream, setWebcamStream] = useState<MediaStream | null>(null);
   const [isWebcamActive, setIsWebcamActive] = useState(false);
 
-  // 초기 로드 시 기본 템플릿 설정 확인
-  React.useEffect(() => {
-    console.log("Initial template:", selectedTemplate);
-    console.log("Initial code:", pythonCode);
-  }, []);
-
   // Python이 로드되면 자동으로 기본 예제 실행 (한 번만)
   const [output, setOutput] = useState("");
   const [isRunning, setIsRunning] = useState(false);
   const [hasRunInitial, setHasRunInitial] = useState(false);
-  const [shouldStop, setShouldStop] = useState(false);
   const {
     isLoaded,
-    error,
     runPythonCode: runPythonCodeWorker,
     stopPythonCode: stopPythonCodeWorker,
-    reinitialize,
   } = usePythonWorker();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  React.useEffect(() => {
-    if (isLoaded && !hasRunInitial) {
-      console.log("Python worker loaded, running initial example...");
-      setHasRunInitial(true);
-      // 약간의 지연을 두고 실행
-      setTimeout(() => {
-        console.log("Auto-running initial code...");
-        runPythonCode();
-      }, 2000);
-    }
-  }, [isLoaded, hasRunInitial]);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -113,16 +93,75 @@ export const OpenCVLearningCanvas: React.FC<OpenCVLearningCanvasProps> = ({
     console.log("New code set:", newCode.substring(0, 100) + "...");
   };
 
-  const runPythonCode = async () => {
+  const clearOutput = () => {
+    setOutput("");
+  };
+
+  const stopPythonCode = () => {
+    setIsRunning(false);
+    setOutput("Python 코드 실행이 중지되었습니다.");
+    stopPythonCodeWorker();
+  };
+
+  // 웹캠 시작
+  const startWebcam = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 640, height: 480 },
+      });
+      setWebcamStream(stream);
+      setIsWebcamActive(true);
+      console.log("웹캠이 시작되었습니다.");
+    } catch (error) {
+      console.error("웹캠 접근 실패:", error);
+      setOutput("웹캠 접근에 실패했습니다. 카메라 권한을 확인해주세요.");
+    }
+  };
+
+  // 웹캠 중지
+  const stopWebcam = () => {
+    if (webcamStream) {
+      webcamStream.getTracks().forEach((track) => track.stop());
+      setWebcamStream(null);
+      setIsWebcamActive(false);
+      console.log("웹캠이 중지되었습니다.");
+    }
+  };
+
+  // 웹캠 프레임을 캡처하여 Python으로 전달
+  const captureWebcamFrame = useCallback(async (): Promise<string | null> => {
+    if (!webcamStream) return null;
+
+    const video = document.createElement("video");
+    video.srcObject = webcamStream;
+    video.play();
+
+    return new Promise((resolve) => {
+      video.onloadedmetadata = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext("2d");
+
+        if (ctx) {
+          ctx.drawImage(video, 0, 0);
+          const dataURL = canvas.toDataURL("image/jpeg");
+          resolve(dataURL);
+        } else {
+          resolve(null);
+        }
+      };
+    });
+  }, [webcamStream]);
+
+  const runPythonCode = useCallback(async () => {
     if (!isLoaded) {
       setOutput(
         "Python 환경이 아직 준비되지 않았습니다. 잠시 후 다시 시도해주세요."
       );
       return;
     }
-
     setIsRunning(true);
-    setShouldStop(false);
     setOutput("");
 
     try {
@@ -162,70 +201,26 @@ export const OpenCVLearningCanvas: React.FC<OpenCVLearningCanvasProps> = ({
     } finally {
       setIsRunning(false);
     }
-  };
+  }, [
+    isLoaded,
+    pythonCode,
+    uploadedImage,
+    isWebcamActive,
+    runPythonCodeWorker,
+    captureWebcamFrame,
+  ]);
 
-  const clearOutput = () => {
-    setOutput("");
-  };
-
-  // Python 코드 실행 중지
-  const stopPythonCode = () => {
-    setShouldStop(true);
-    setIsRunning(false);
-    setOutput("Python 코드 실행이 중지되었습니다.");
-    stopPythonCodeWorker();
-  };
-
-  // 웹캠 시작
-  const startWebcam = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 480 },
-      });
-      setWebcamStream(stream);
-      setIsWebcamActive(true);
-      console.log("웹캠이 시작되었습니다.");
-    } catch (error) {
-      console.error("웹캠 접근 실패:", error);
-      setOutput("웹캠 접근에 실패했습니다. 카메라 권한을 확인해주세요.");
+  React.useEffect(() => {
+    if (isLoaded && !hasRunInitial) {
+      console.log("Python worker loaded, running initial example...");
+      setHasRunInitial(true);
+      // 약간의 지연을 두고 실행
+      setTimeout(() => {
+        console.log("Auto-running initial code...");
+        runPythonCode();
+      }, 2000);
     }
-  };
-
-  // 웹캠 중지
-  const stopWebcam = () => {
-    if (webcamStream) {
-      webcamStream.getTracks().forEach((track) => track.stop());
-      setWebcamStream(null);
-      setIsWebcamActive(false);
-      console.log("웹캠이 중지되었습니다.");
-    }
-  };
-
-  // 웹캠 프레임을 캡처하여 Python으로 전달
-  const captureWebcamFrame = async (): Promise<string | null> => {
-    if (!webcamStream) return null;
-
-    const video = document.createElement("video");
-    video.srcObject = webcamStream;
-    video.play();
-
-    return new Promise((resolve) => {
-      video.onloadedmetadata = () => {
-        const canvas = document.createElement("canvas");
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        const ctx = canvas.getContext("2d");
-
-        if (ctx) {
-          ctx.drawImage(video, 0, 0);
-          const dataURL = canvas.toDataURL("image/jpeg");
-          resolve(dataURL);
-        } else {
-          resolve(null);
-        }
-      };
-    });
-  };
+  }, [isLoaded, hasRunInitial, runPythonCode]);
 
   if (!isLoaded) {
     return (
@@ -263,11 +258,13 @@ export const OpenCVLearningCanvas: React.FC<OpenCVLearningCanvasProps> = ({
 
         {uploadedImage && (
           <div className="border border-gray-300 rounded-lg overflow-hidden">
-            <img
+            <Image
               src={uploadedImage}
               alt="Uploaded"
+              width={300}
+              height={300}
               className="max-w-full h-auto"
-              style={{ maxHeight: "300px" }}
+              style={{ objectFit: "contain", maxHeight: "300px" }}
             />
           </div>
         )}

@@ -109,7 +109,8 @@ export const CommunityFeed: React.FC = () => {
     );
   };
 
-  const handleComment = (postId: string, comment: string) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handleComment = (postId: string, _comment: string) => {
     setPosts((prevPosts) =>
       prevPosts.map((post) =>
         post.id === postId ? { ...post, comments: post.comments + 1 } : post

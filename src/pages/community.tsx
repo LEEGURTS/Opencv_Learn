@@ -1,5 +1,6 @@
 import React from "react";
 import { CommunityFeed } from "@/components/CommunityFeed";
+import Link from "next/link";
 
 const CommunityPage: React.FC = () => {
   return (
@@ -13,24 +14,24 @@ const CommunityPage: React.FC = () => {
               </h1>
             </div>
             <nav className="flex space-x-8">
-              <a
+              <Link
                 href="/"
                 className="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
               >
                 학습
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/community"
                 className="text-blue-600 hover:text-blue-800 px-3 py-2 rounded-md text-sm font-medium"
               >
                 커뮤니티
-              </a>
-              <a
+              </Link>
+              <Link
                 href="#"
                 className="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
               >
                 프로젝트
-              </a>
+              </Link>
             </nav>
           </div>
         </div>

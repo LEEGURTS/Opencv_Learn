@@ -1,6 +1,12 @@
 // OpenCV Mat을 HTML Canvas에 그리는 유틸리티 함수들
 
-export const drawMatToCanvas = (mat: any, canvas: HTMLCanvasElement) => {
+interface Mat {
+  data: Uint8ClampedArray;
+  cols: number;
+  rows: number;
+}
+
+export const drawMatToCanvas = (mat: Mat, canvas: HTMLCanvasElement) => {
   if (!mat || !canvas) return;
 
   const ctx = canvas.getContext("2d");
@@ -21,13 +27,13 @@ export const drawMatToCanvas = (mat: any, canvas: HTMLCanvasElement) => {
   ctx.putImageData(imageData, 0, 0);
 };
 
-export const matToImageData = (mat: any): ImageData => {
+export const matToImageData = (mat: Mat): ImageData => {
   if (!mat) return new ImageData(1, 1);
 
   return new ImageData(new Uint8ClampedArray(mat.data), mat.cols, mat.rows);
 };
 
-export const createImageFromMat = (mat: any): string => {
+export const createImageFromMat = (mat: Mat): string => {
   if (!mat) return "";
 
   const canvas = document.createElement("canvas");
