@@ -1,6 +1,7 @@
-import { OpenCVLearningCanvas } from "@/components/OpenCVLearningCanvas";
+import React from "react";
+import { CommunityFeed } from "@/components/CommunityFeed";
 
-export default function Home() {
+const CommunityPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm border-b">
@@ -13,14 +14,14 @@ export default function Home() {
             </div>
             <nav className="flex space-x-8">
               <a
-                href="#"
+                href="/"
                 className="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
               >
                 학습
               </a>
               <a
-                href="#"
-                className="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                href="/community"
+                className="text-blue-600 hover:text-blue-800 px-3 py-2 rounded-md text-sm font-medium"
               >
                 커뮤니티
               </a>
@@ -35,19 +36,18 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
-            Python OpenCV 실습 환경
-          </h2>
-          <p className="text-gray-600 mb-6">
-            브라우저에서 Python과 OpenCV를 직접 실행해보세요. 이미지를
-            업로드하고 Python 코드로 이미지 처리를 실습할 수 있습니다.
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">커뮤니티</h2>
+          <p className="text-gray-600">
+            OpenCV 학습자들과 함께 지식을 공유하고 소통해보세요.
           </p>
-
-          <OpenCVLearningCanvas />
         </div>
+
+        <CommunityFeed />
       </main>
     </div>
   );
-}
+};
+
+export default CommunityPage;
